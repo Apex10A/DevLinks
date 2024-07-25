@@ -8,11 +8,7 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "browser": {
-    "child_process": false,
-    "fs": false,
-    "readline": false
-  },
+  
   "dependencies": {
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.13.0",
