@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getDatabase, ref, onValue, remove } from 'firebase/database';
+// import { getDatabase, ref, onValue, remove } from 'firebase/database';
 import './Mobile.css';
-import app from '../../firebase/Fire'; // Ensure Firebase is initialized
+// import app from '../../firebase/Fire'; // Ensure Firebase is initialized
 import GithubDark from "@/app/assets/svgs/GithubDark";
 import MobilePrevieww from "../../assets/svgs/MobilePrevieww"
 import LinkedInIcon from "@/app/assets/svgs/LinkedInIcon";
@@ -29,28 +29,28 @@ const MobilePreview = () => {
   const [links, setLinks] = useState([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState(new Set());
 
-  useEffect(() => {
-    const db = getDatabase(app);
-    const profileRef = ref(db, 'profile');
-    const linksRef = ref(db, 'links/items');
+  // useEffect(() => {
+  //   const db = getDatabase(app);
+  //   const profileRef = ref(db, 'profile');
+  //   const linksRef = ref(db, 'links/items');
 
-    onValue(profileRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setProfile(data);
-      }
-      setLoading(false);
-    });
+  //   onValue(profileRef, (snapshot) => {
+  //     const data = snapshot.val();
+  //     if (data) {
+  //       setProfile(data);
+  //     }
+  //     setLoading(false);
+  //   });
 
-    onValue(linksRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const linkArray = Object.values(data);
-        // setLinks(linkArray);
-        // setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
-      }
-    });
-  }, []);
+  //   onValue(linksRef, (snapshot) => {
+  //     const data = snapshot.val();
+  //     if (data) {
+  //       const linkArray = Object.values(data);
+  //       // setLinks(linkArray);
+  //       // setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
+  //     }
+  //   });
+  // }, []);
 
   // const handleRemoveLink = (id, platform) => {
   //   const db = getDatabase(app);
