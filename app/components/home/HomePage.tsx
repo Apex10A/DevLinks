@@ -34,8 +34,8 @@ const HomePage: React.FC = () => {
             const data = snapshot.val();
             if (data) {
                 const linkArray = Object.values(data);
-                setLinks(linkArray.map((link, index) => ({ ...link, id: index + 1 })));
-                setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
+                // setLinks(linkArray.map((link, index) => ({ ...link:, id: index + 1 })));
+                // setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
             }
         });
     }, []);
@@ -53,7 +53,8 @@ const HomePage: React.FC = () => {
             }));
             toast.success("Data saved successfully");
         } catch (error) {
-            toast.error(`Error: ${error.message}`);
+            toast.error(`Error: `);
+            // ${error.message}
         }
     };
 
@@ -128,7 +129,7 @@ const HomePage: React.FC = () => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <MobilePreview links={links} />
+                        <MobilePreview  />
                     </motion.div>
                 </AnimatePresence>
                 <div className='bg-[#fff]'>

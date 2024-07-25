@@ -22,7 +22,7 @@ const Login = () => {
 
   useEffect(() => {
     if (!isLoading && authUser) {
-      router.push('/auth/home');
+      // router.push('/auth/home');
     }
   }, [authUser, isLoading, router]);
 
@@ -39,7 +39,7 @@ const Login = () => {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/auth/home');
+      // router.push('/auth/home');
     } catch (error: any) {
       console.error('An error occurred', error);
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {

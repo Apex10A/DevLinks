@@ -46,26 +46,26 @@ const MobilePreview = () => {
       const data = snapshot.val();
       if (data) {
         const linkArray = Object.values(data);
-        setLinks(linkArray);
-        setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
+        // setLinks(linkArray);
+        // setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
       }
     });
   }, []);
 
-  const handleRemoveLink = (id, platform) => {
-    const db = getDatabase(app);
-    const linkRef = ref(db, `links/items/${id}`);
-    remove(linkRef).then(() => {
-      setLinks(prevLinks => prevLinks.filter(link => link.id !== id));
-      setSelectedPlatforms(prevPlatforms => {
-        const updatedPlatforms = new Set(prevPlatforms);
-        updatedPlatforms.delete(platform);
-        return updatedPlatforms;
-      });
-    }).catch((error) => {
-      console.error("Error removing link: ", error);
-    });
-  };
+  // const handleRemoveLink = (id, platform) => {
+  //   const db = getDatabase(app);
+  //   const linkRef = ref(db, `links/items/${id}`);
+  //   remove(linkRef).then(() => {
+  //     setLinks(prevLinks => prevLinks.filter(link => link.id !== id));
+  //     setSelectedPlatforms(prevPlatforms => {
+  //       const updatedPlatforms = new Set(prevPlatforms);
+  //       updatedPlatforms.delete(platform);
+  //       return updatedPlatforms;
+  //     });
+  //   }).catch((error) => {
+  //     console.error("Error removing link: ", error);
+  //   });
+  // };
 
   return (
     <div className='relative flex items-center justify-center'>
@@ -83,8 +83,8 @@ const MobilePreview = () => {
           const link = links[index];
           if (link) {
             return (
-              <div key={link.id} className='mb-4 flex flex-col items-center justify-center w-full mx-auto'>
-                <button
+              <div key={link} className='mb-4 flex flex-col items-center justify-center w-full mx-auto'>
+                {/* <button
                   className={`skeleton-texts flex items-center justify-center rounded-lg w-20 py-3 ${platformColors[link.platform]}`}
                   onClick={() => handleRemoveLink(link.id, link.platform)}
                 >
@@ -94,7 +94,7 @@ const MobilePreview = () => {
                     </span>
                   )}
                   <span className='text-white'>{link.platform}</span>
-                </button>
+                </button> */}
               </div>
             );
           } else {
