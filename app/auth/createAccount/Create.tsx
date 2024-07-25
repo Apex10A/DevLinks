@@ -5,6 +5,7 @@ import DevLinksLogo from '@/app/assets/svgs/DevLinksLogo';
 import MailIcon from '@/app/assets/svgs/MailIcon';
 import PasswordIcon from '@/app/assets/svgs/PasswordIcon';
 import { auth } from '../../firebase/Fire';
+import { FirebaseError } from 'firebase/app'; // Ensure this import is correct based on your Firebase version
 import {
     createUserWithEmailAndPassword,
     updateProfile,
@@ -33,7 +34,7 @@ const Create = () => {
         if (!isLoading && authUser) {
             router.push('/auth/login');
         }
-    }, [authUser, isLoading]);
+    }, [authUser, isLoading, router]);
 
     const handleSignup = async () => {
         let hasError = false;
@@ -60,12 +61,16 @@ const Create = () => {
             await updateProfile(userCredential.user, { displayName: email.split('@')[0] });
             router.push('/auth/login');
             console.log(userCredential)
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('An error occurred during sign up:', error);
-          if (error.code === 'auth/email-already-in-use') {
-              toast.error('The email you have provided is already associated with an account.');
+          if (error instanceof FirebaseError) {
+              if (error.code === 'auth/email-already-in-use') {
+                  toast.error('The email you have provided is already associated with an account.');
+              } else {
+                  toast.error(error.message); 
+              }
           } else {
-              toast.error(error.message); 
+              toast.error('An unexpected error occurred.'); // Handle non-Firebase errors
           }
       }
       setConfirmPasswordError('');

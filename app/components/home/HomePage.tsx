@@ -1,9 +1,9 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getDatabase, ref, set, push } from 'firebase/database';
-import app from '../../firebase/Fire'; // Ensure you have Firebase initialized
+import { getDatabase, ref, set, push, onValue } from 'firebase/database';
+import app from '../../firebase/Fire';
 import Preview from "../../assets/images/preview-section.png";
 import Hand from '../../assets/images/Hand.png';
 import GithubDark from "@/app/assets/svgs/GithubDark";
@@ -14,10 +14,31 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import LinkedInIcon from '@/app/assets/svgs/LinkedInIcon';
 
-const HomePage = () => {
+interface Link {
+    id: number;
+    platform: string;
+    url: string;
+    error?: string;
+}
+
+const HomePage: React.FC = () => {
     const [showAddLinkForm, setShowAddLinkForm] = useState(false);
-    const [links, setLinks] = useState([]);
-    const [selectedPlatforms, setSelectedPlatforms] = useState(new Set());
+    const [links, setLinks] = useState<Link[]>([]);
+    const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        const db = getDatabase(app);
+        const linksRef = ref(db, 'links/items');
+
+        onValue(linksRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const linkArray = Object.values(data);
+                setLinks(linkArray.map((link, index) => ({ ...link, id: index + 1 })));
+                setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
+            }
+        });
+    }, []);
 
     const saveData = async () => {
         const db = getDatabase(app);
@@ -41,7 +62,7 @@ const HomePage = () => {
         setShowAddLinkForm(true);
     };
 
-    const handleRemoveLink = (id) => {
+    const handleRemoveLink = (id: number) => {
         setLinks(links.filter(link => link.id !== id));
         const removedLink = links.find(link => link.id === id);
         if (removedLink) {
@@ -53,8 +74,8 @@ const HomePage = () => {
         }
     };
 
-    const validateUrl = (platform, url) => {
-        const platformPatterns = {
+    const validateUrl = (platform: string, url: string): boolean => {
+        const platformPatterns: { [key: string]: RegExp } = {
             github: /^https:\/\/github\.com\/.+$/,
             linkedin: /^https:\/\/(www\.)?linkedin\.com\/.+$/,
             youtube: /^https:\/\/(www\.)?youtube\.com\/.+$/,
@@ -62,22 +83,23 @@ const HomePage = () => {
             codewars: /^https:\/\/www\.codewars\.com\/.+$/,
             freecodecamp: /^https:\/\/www\.freecodecamp\.org\/.+$/,
         };
-        return platformPatterns[platform]?.test(url);
+        return platformPatterns[platform]?.test(url) ?? false;
     };
 
-    const handleChange = (id, e) => {
+    const handleChange = (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setLinks(links.map(link => {
             if (link.id === id) {
+                let error = '';
                 if (name === 'platform') {
                     setSelectedPlatforms(prevPlatforms => {
                         const updatedPlatforms = new Set(prevPlatforms);
                         if (updatedPlatforms.has(value)) {
-                            toast.error("This platform has already been added.");
-                            return prevPlatforms; // No changes to the set
+                            error = "This platform has already been added.";
+                            return prevPlatforms;
                         }
                         updatedPlatforms.add(value);
-                        updatedPlatforms.delete(link.platform); // Remove old platform
+                        updatedPlatforms.delete(link.platform);
                         return updatedPlatforms;
                     });
                 }
@@ -85,12 +107,11 @@ const HomePage = () => {
                 if (name === 'url') {
                     const isValid = validateUrl(link.platform, value);
                     if (!isValid) {
-                        toast.error(`Invalid URL for ${link.platform}`);
-                        return link;
+                        error = `Invalid URL for ${link.platform}`;
                     }
                 }
 
-                return { ...link, [name]: value };
+                return { ...link, [name]: value, error };
             }
             return link;
         }));
@@ -124,7 +145,7 @@ const HomePage = () => {
                             <button
                                 className='border border-[#633CFF] bg-transparent text-[#633CFF] font-[600] rounded-[8px] px-[27px] py-[10px] w-full'
                                 onClick={handleAddLinkClick}
-                                disabled={selectedPlatforms.size === 6} // Disable if all platforms are selected
+                                disabled={selectedPlatforms.size === 6}
                             >
                                 + Add new link
                             </button>
@@ -167,7 +188,7 @@ const HomePage = () => {
                                         </div>
                                         <div>
                                             <p className='text-[12px] font-[400] pb-1'>Platform</p>
-                                            <div className='border border-[#D9D9D9] bg-[#fff] flex items-center justify-between px-4 rounded-[8px]'>
+                                            <div className={`border ${link.error ? 'border-red-500' : 'border-[#D9D9D9]'} bg-[#fff] flex items-center justify-between px-4 rounded-[8px]`}>
                                                 <GithubDark />
                                                 <label htmlFor={`platform-${link.id}`} className='sr-only'>Platform</label>
                                                 <select
@@ -188,49 +209,45 @@ const HomePage = () => {
                                             </div>
                                             <div className='mt-2'>
                                                 <p className='text-[12px] font-[400] pb-1'>Link</p>
-                                                <div className='border border-[#D9D9D9] bg-[#fff] flex items-center justify-between px-4 rounded-[8px]'>
+                                                <div className={`border ${link.error ? 'border-red-500' : 'border-[#D9D9D9]'} bg-[#fff] flex items-center justify-between px-4 rounded-[8px]`}>
                                                     <LinkIconTwo />
                                                     <label htmlFor={`link-${link.id}`} className='sr-only'>Link</label>
                                                     <input
                                                         type="url"
                                                         name="url"
                                                         id={`link-${link.id}`}
-                                                        className='py-[12px] px-[16px] w-full border-none outline-none active active:border active:border-[#962be344]'
+                                                        className='py-[12px] px-[16px] w-full border-none outline-none'
                                                         placeholder='e.g. https://github.com/username'
                                                         value={link.url}
                                                         onChange={(e) => handleChange(link.id, e)}
                                                     />
                                                 </div>
+                                                {link.error && (
+                                                    <div className='text-red-500 text-sm mt-1'>
+                                                        {link.error}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 </motion.div>
                             ))
                         ) : (
-                            <motion.div
-                                className='max-w-xl flex flex-col items-center justify-center pt-10'
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.5 }}
-                            >
-                                <h1 className='md:text-[32px] text-[24px] font-[700] text-[#333]'>
-                                    Let’s get you started
-                                </h1>
-                                <p className='text-[16px] font-[400] text-[#737373]'>
-                                    Use the “Add new link” button to get started. Once you have more than one link, you can reorder and edit them.
+                            <div className='text-center'>
+                                <h2 className='md:text-[20px] text-[16px] font-[600] text-[#333] py-4'>
+                                    Add your links
+                                </h2>
+                                <p className='text-[14px] font-[400] text-[#737373] pb-6'>
+                                    Click the button above to add your first link!
                                 </p>
-                            </motion.div>
+                            </div>
                         )}
-                    </div>
-                    <div className='bg-[#fff] flex flex-col items-center justify-center mx-[20px] md:mx-[40px] px-4 md:px-10 py-3'>
-                        <div className='max-w-xl flex flex-col items-center justify-center pt-10'>
+                        <div className='pt-10'>
                             <button
-                                className='bg-[#633CFF] text-[#fff] font-[600] rounded-[8px] px-[27px] py-[10px] w-full'
+                                className='bg-[#633CFF] text-white font-[600] rounded-[8px] px-[27px] py-[10px] w-full'
                                 onClick={saveData}
-                                disabled={!links.length}
                             >
-                                Save Links
+                                Save
                             </button>
                         </div>
                     </div>

@@ -27,6 +27,7 @@ export default function useFirebaseAuth() {
     setIsLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const authStateChanged = async (user: User | null) => {
     setIsLoading(true);
     if (!user) {
@@ -48,7 +49,7 @@ export default function useFirebaseAuth() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, authStateChanged);
     return () => unsubscribe();
-  }, []);
+  }, [authStateChanged]);
 
   return {
     authUser,

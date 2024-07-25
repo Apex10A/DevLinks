@@ -14,6 +14,9 @@
     "readline": false
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.8.2",
+    "@emotion/react": "^11.13.0",
+    "@emotion/styled": "^11.13.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.0",
     "@shadcn/ui": "^0.0.4",
@@ -26,6 +29,7 @@
     "npx": "^10.2.2",
     "react": "^18",
     "react-dom": "^18",
+    "react-icons": "^5.2.1",
     "react-modal": "^3.16.1",
     "react-toastify": "^10.0.5",
     "shadcn-ui": "^0.8.0",

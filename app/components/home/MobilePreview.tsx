@@ -1,22 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { getDatabase, ref, onValue } from 'firebase/database';
+import { getDatabase, ref, onValue, remove } from 'firebase/database';
 import './Mobile.css';
 import app from '../../firebase/Fire'; // Ensure Firebase is initialized
 import GithubDark from "@/app/assets/svgs/GithubDark";
+import MobilePrevieww from "../../assets/svgs/MobilePrevieww"
 import LinkedInIcon from "@/app/assets/svgs/LinkedInIcon";
 // Import other icons similarly
 
-// Map platform names to icons
+// Map platform names to icons and colors
 const platformIcons = {
   github: <GithubDark />,
   linkedin: <LinkedInIcon />,
   // Add other icons here
 };
 
+const platformColors = {
+  github: 'bg-black',
+  linkedin: 'bg-blue-600',
+  youtube: 'bg-red-600',
+  'dev.to': 'bg-gray-900',
+  codewars: 'bg-purple-600',
+  freecodecamp: 'bg-pink-600',
+};
+
 const MobilePreview = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [links, setLinks] = useState([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState(new Set());
 
   useEffect(() => {
     const db = getDatabase(app);
@@ -36,55 +47,67 @@ const MobilePreview = () => {
       if (data) {
         const linkArray = Object.values(data);
         setLinks(linkArray);
+        setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
       }
     });
   }, []);
 
+  const handleRemoveLink = (id, platform) => {
+    const db = getDatabase(app);
+    const linkRef = ref(db, `links/items/${id}`);
+    remove(linkRef).then(() => {
+      setLinks(prevLinks => prevLinks.filter(link => link.id !== id));
+      setSelectedPlatforms(prevPlatforms => {
+        const updatedPlatforms = new Set(prevPlatforms);
+        updatedPlatforms.delete(platform);
+        return updatedPlatforms;
+      });
+    }).catch((error) => {
+      console.error("Error removing link: ", error);
+    });
+  };
+
   return (
-    <div className='relative'>
-      <svg
-        width='308'
-        height='632'
-        viewBox='0 0 308 632'
-        fill='none'
-        xmlns='http://www.w3.org/2000/svg'
-      >
-        <path
-          d='M1 54.5C1 24.9528 24.9528 1 54.5 1H253.5C283.047 1 307 24.9528 307 54.5V577.5C307 607.047 283.047 631 253.5 631H54.5C24.9528 631 1 607.047 1 577.5V54.5Z'
-          stroke='#737373'
-        />
-        <path
-          d='M12 55.5C12 30.9233 31.9233 11 56.5 11H80.5C86.8513 11 92 16.1487 92 22.5C92 30.5081 98.4919 37 106.5 37H201.5C209.508 37 216 30.5081 216 22.5C216 16.1487 221.149 11 227.5 11H251.5C276.077 11 296 30.9233 296 55.5V576.5C296 601.077 276.077 621 251.5 621H56.5C31.9233 621 12 601.077 12 576.5V55.5Z'
-          fill='white'
-          stroke='#737373'
-        />
-      </svg>
+    <div className='relative flex items-center justify-center'>
+      <div>
+        <MobilePrevieww />
+      </div>
       <div className='absolute inset-0 flex flex-col items-center justify-center p-4'>
-        {profile && (
-          <>
-            <div className='skeleton-img rounded-full mb-4'>
-              {/* Placeholder for profile picture */}
-            </div>
-            <div className='skeleton-text rounded-lg mb-2'>
-              {profile.username}
-            </div>
-          </>
-        )}
-        {links.map(link => (
-          <div key={link.link} className='w-40 mb-4'>
-            <button className='skeleton-button flex items-center justify-center w-full h-12 bg-[#e0e0e0] rounded'>
-              {platformIcons[link.platform] && (
-                <span className='mr-2'>
-                  {platformIcons[link.platform]}
-                </span>
-              )}
-              <span className='text-black'>{link.platform}</span>
-            </button>
-          </div>
-        ))}
+        {/* Profile Skeleton */}
+        <div className='skeleton-img rounded-full mb-4 bg-[#efefef] w-20 h-20'></div>
+        <div className='skeleton-text rounded-xl mb-4 bg-[#efefef] w-20 py-2'></div>
+        <div className='skeleton-text2 rounded-xl mb-4 bg-[#efefef] w-20 py-1'></div>
+        
+        {/* Display Links */}
+        {Array.from({ length: 6 }).map((_, index) => {
+          const link = links[index];
+          if (link) {
+            return (
+              <div key={link.id} className='mb-4 flex flex-col items-center justify-center w-full mx-auto'>
+                <button
+                  className={`skeleton-texts flex items-center justify-center rounded-lg w-20 py-3 ${platformColors[link.platform]}`}
+                  onClick={() => handleRemoveLink(link.id, link.platform)}
+                >
+                  {platformIcons[link.platform] && (
+                    <span className='mr-2'>
+                      {platformIcons[link.platform]}
+                    </span>
+                  )}
+                  <span className='text-white'>{link.platform}</span>
+                </button>
+              </div>
+            );
+          } else {
+            return (
+              <div key={index} className='mb-4 flex flex-col items-center justify-center w-full mx-auto'>
+                <div className='skeleton-text bg-[#efefef] rounded-lg w-20 py-3'></div>
+              </div>
+            );
+          }
+        })}
       </div>
     </div>
   );
-}
+};
 
 export default MobilePreview;
