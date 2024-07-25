@@ -4,20 +4,20 @@ import Image from 'next/image';
 import Preview from "../../assets/images/preview-section.png";
 import Hand from '../../assets/images/Hand.png';
 import MobilePreview from "./MobilePreview";
-// import ImageUpload from "./ImageUpload";
+import ImageUpload from "./ImageUpload";
 
 const ProfileDetails = () => {
     const [image, setImage] = useState(null);
 
-    // const handleImageUpload = (file: File) => {
-    //     const reader = new FileReader();
-    //     reader.onloadend = () => {
-    //         setImage(reader.result);
-    //     };
-    //     if (file) {
-    //         reader.readAsDataURL(file);
-    //     }
-    // };
+    const handleImageUpload = (file: File) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImage(reader.result);
+        };
+        if (file) {
+            reader.readAsDataURL(file);
+        }
+    };
 
     return (
         <div className='bg-[#FAFAFA]'>
@@ -37,7 +37,7 @@ const ProfileDetails = () => {
                             <p className='text-[16px] font-[400] text-[#737373]'>Profile picture</p>
                         </div>
                         <div>
-                            {/* <ImageUpload onImageUpload={handleImageUpload} image={image} /> */}
+                            <ImageUpload onImageUpload={handleImageUpload} image={image} />
                         </div>
                     </div>
                     <div className='bg-[#FAFAFA] flex flex-col items-center justify-center mx-[20px] md:mx-[40px] px-4 md:px-10 py-10 mt-5'>

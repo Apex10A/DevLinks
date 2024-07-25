@@ -1,5 +1,5 @@
 import React from 'react'
-import DevLinks from '@/app/assets/svgs/DevLinks'
+import DevLink from '@/app/assets/svgs/Devlink'
 import DevLinksLogo from '@/app/assets/svgs/DevLinksLogo'
 import LinkIcon from '@/app/assets/svgs/LinkIcon'
 import ProfileIcon from '@/app/assets/svgs/ProfileIcon'
@@ -9,13 +9,13 @@ import Link from 'next/link'
 const Header = () => {
   return (
     <div className='bg-[#FAFAFA] md:px-[40px] md:py-[30px] '>
-        <div className='bg-[#fff] flex items-center justify-between md:px-10 md:py-0 px-[24px] py-[20px]'>
+        <div className='bg-[#fff] flex items-center justify-between md:px-10 py-[20px] px-[24px]'>
         <div className='flex items-center gap-2 '>
             <div>
             <DevLinksLogo/>
             </div>
             <div className='hidden md:flex'>
-            <DevLinks/>
+            <DevLink/>
             </div>
         </div>
         <div className='flex items-center gap-3'>

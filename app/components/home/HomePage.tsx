@@ -34,8 +34,8 @@ const HomePage: React.FC = () => {
             const data = snapshot.val();
             if (data) {
                 const linkArray = Object.values(data);
-                // setLinks(linkArray.map((link, index) => ({ ...link:, id: index + 1 })));
-                // setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
+                setLinks(linkArray.map((link, index) => ({...link, id: index + 1 })));
+                setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
             }
         });
     }, []);
@@ -235,23 +235,23 @@ const HomePage: React.FC = () => {
                             ))
                         ) : (
                             <div className='text-center'>
-                                <h2 className='md:text-[20px] text-[16px] font-[600] text-[#333] py-4'>
-                                    Add your links
+                                <h2 className='md:text-[32px] text-[24px] pb-4 font-[700] text-[#333]'>
+                                Let’s get you started
                                 </h2>
-                                <p className='text-[14px] font-[400] text-[#737373] pb-6'>
-                                    Click the button above to add your first link!
+                                <p className='text-[14px] max-w-xl font-[400] text-[#737373] pb-6'>
+                                Use the “Add new link” button to get started. Once you have more than one link, you can reorder and edit them. We’re here to help you share your profiles with everyone!
                                 </p>
                             </div>
                         )}
-                        <div className='pt-10'>
+                    </div>
+                    <div className='pt-10 px-10 flex items-end justify-end'>
                             <button
-                                className='bg-[#633CFF] text-white font-[600] rounded-[8px] px-[27px] py-[10px] w-full'
+                                className='bg-[#633CFF] text-white font-[600] rounded-[8px] px-[27px] py-[10px] w-full md:w-auto'
                                 onClick={saveData}
                             >
                                 Save
                             </button>
                         </div>
-                    </div>
                 </div>
             </div>
             <ToastContainer />
