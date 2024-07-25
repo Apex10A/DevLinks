@@ -32,7 +32,7 @@ const Create = () => {
     
     useEffect(() => {
         if (!isLoading && authUser) {
-            // router.push('/a');
+            router.push('/auth/login');
         }
     }, [authUser, isLoading, router]);
 
@@ -59,7 +59,7 @@ const Create = () => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             await updateProfile(userCredential.user, { displayName: email.split('@')[0] });
-            // router.push('/auth/login');
+            router.push('/auth/login');
             console.log(userCredential)
         } catch (error: unknown) {
           console.error('An error occurred during sign up:', error);

@@ -11,8 +11,7 @@ import ProfileDetails from './components/home/ProfileDetails'
 export default function Home() {
   return (
     <div>
-      <Header/>
-        <ProfileDetails/>
+      <Create/>
     </div>
   )
 }
