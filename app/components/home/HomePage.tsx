@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getDatabase, ref, set, push, onValue } from 'firebase/database';
+import { getDatabase, ref, set, push, onValue, remove } from 'firebase/database';
 import app from '../../firebase/Fire';
 import Preview from "../../assets/images/preview-section.png";
 import Hand from '../../assets/images/Hand.png';
@@ -19,12 +19,14 @@ interface Link {
     platform: string;
     url: string;
     error?: string;
+    firebaseKey?: string; // Add this to track Firebase keys
 }
 
 const HomePage: React.FC = () => {
     const [showAddLinkForm, setShowAddLinkForm] = useState(false);
     const [links, setLinks] = useState<Link[]>([]);
     const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(new Set());
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         const db = getDatabase(app);
@@ -33,28 +35,56 @@ const HomePage: React.FC = () => {
         onValue(linksRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const linkArray = Object.values(data);
-                setLinks(linkArray.map((link, index) => ({...link, id: index + 1 })));
+                const linkArray = Object.entries(data).map(([key, value]: [string, any], index) => ({
+                    ...value,
+                    id: index + 1,
+                    firebaseKey: key,
+                    url: value.link // map the 'link' field to 'url'
+                }));
+                setLinks(linkArray);
                 setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
+                setShowAddLinkForm(linkArray.length > 0);
+            } else {
+                setLinks([]);
+                setSelectedPlatforms(new Set());
+                setShowAddLinkForm(false);
             }
         });
     }, []);
 
     const saveData = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+
         const db = getDatabase(app);
-        const linkRef = ref(db, 'links/items');
+        const linksRef = ref(db, 'links/items');
+
         try {
-            await Promise.all(links.map(async (link) => {
-                const newDoc = push(linkRef);
+            // First, remove all existing links
+            await remove(linksRef);
+
+            // Then add all current links
+            for (const link of links) {
+                if (!link.platform || !link.url) {
+                    throw new Error('All links must have both platform and URL');
+                }
+
+                if (!validateUrl(link.platform, link.url)) {
+                    throw new Error(`Invalid URL format for ${link.platform}`);
+                }
+
+                const newDoc = push(linksRef);
                 await set(newDoc, {
                     link: link.url,
                     platform: link.platform,
                 });
-            }));
-            toast.success("Data saved successfully");
-        } catch (error) {
-            toast.error(`Error: `);
-            // ${error.message}
+            }
+
+            toast.success("Links saved successfully");
+        } catch (error: any) {
+            toast.error(`Error: ${error.message}`);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -245,13 +275,16 @@ const HomePage: React.FC = () => {
                         )}
                     </div>
                     <div className='pt-10 px-10 flex items-end justify-end'>
-                            <button
-                                className='bg-[#633CFF] text-white font-[600] rounded-[8px] px-[27px] py-[10px] w-full md:w-auto'
-                                onClick={saveData}
-                            >
-                                Save
-                            </button>
-                        </div>
+                <button
+                    className={`bg-[#633CFF] text-white font-[600] rounded-[8px] px-[27px] py-[10px] w-full md:w-auto ${
+                        isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    onClick={saveData}
+                    disabled={isSaving || links.some(link => !!link.error) || links.length === 0}
+                >
+                    {isSaving ? 'Saving...' : 'Save'}
+                </button>
+            </div>
                 </div>
             </div>
             <ToastContainer />

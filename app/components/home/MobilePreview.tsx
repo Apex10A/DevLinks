@@ -3,7 +3,7 @@ import { getDatabase, ref, onValue, remove } from 'firebase/database';
 import './Mobile.css';
 import app from '../../firebase/Fire'; // Ensure Firebase is initialized
 import GithubDark from "@/app/assets/svgs/GithubDark";
-import MobilePrevieww from "../../assets/svgs/MobilePrevieww"
+import MobilePrevieww from "../../assets/svgs/MobilePrevieww";
 import LinkedInIcon from "@/app/assets/svgs/LinkedInIcon";
 // Import other icons similarly
 
@@ -23,88 +23,96 @@ const platformColors = {
   freecodecamp: 'bg-pink-600',
 };
 
-const MobilePreview = () => {
+const MobilePreview = ({ name }: { name: string }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [links, setLinks] = useState([]);
-  const [selectedPlatforms, setSelectedPlatforms] = useState(new Set());
 
   useEffect(() => {
     const db = getDatabase(app);
     const profileRef = ref(db, 'profile');
     const linksRef = ref(db, 'links/items');
 
+    // Fetch profile data
     onValue(profileRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        setProfile(data);
-      }
+      setProfile(data || null);
       setLoading(false);
     });
 
+    // Fetch links data
     onValue(linksRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const linkArray = Object.values(data);
+        const linkArray = Object.entries(data).map(([key, value]) => ({
+          id: key,
+          ...value,
+        }));
         setLinks(linkArray);
-        setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
+      } else {
+        setLinks([]);
       }
     });
   }, []);
 
-  const handleRemoveLink = (id, platform) => {
+  const handleRemoveLink = (id) => {
     const db = getDatabase(app);
     const linkRef = ref(db, `links/items/${id}`);
-    remove(linkRef).then(() => {
-      setLinks(prevLinks => prevLinks.filter(link => link.id !== id));
-      setSelectedPlatforms(prevPlatforms => {
-        const updatedPlatforms = new Set(prevPlatforms);
-        updatedPlatforms.delete(platform);
-        return updatedPlatforms;
-      });
-    }).catch((error) => {
-      console.error("Error removing link: ", error);
-    });
+    remove(linkRef)
+      .then(() => setLinks((prevLinks) => prevLinks.filter((link) => link.id !== id)))
+      .catch((error) => console.error('Error removing link:', error));
   };
 
   return (
-    <div className='relative flex items-center justify-center'>
+    <div className="relative flex items-center justify-center">
       <div>
         <MobilePrevieww />
       </div>
-      <div className='absolute inset-0 flex flex-col items-center justify-center p-4'>
-        {/* Profile Skeleton */}
-        <div className='skeleton-img rounded-full mb-4 bg-[#efefef] w-20 h-20'></div>
-        <div className='skeleton-text rounded-xl mb-4 bg-[#efefef] w-20 py-2'></div>
-        <div className='skeleton-text2 rounded-xl mb-4 bg-[#efefef] w-20 py-1'></div>
-        
-        {/* Display Links */}
-        {Array.from({ length: 6 }).map((_, index) => {
-          const link = links[index];
-          if (link) {
-            return (
-              <div key={link} className='mb-4 flex flex-col items-center justify-center w-full mx-auto'>
-                <button
-                  className={`skeleton-texts flex items-center justify-center rounded-lg w-20 py-3 ${platformColors[link.platform]}`}
-                  onClick={() => handleRemoveLink(link.id, link.platform)}
-                >
-                  {platformIcons[link.platform] && (
-                    <span className='mr-2'>
-                      {platformIcons[link.platform]}
-                    </span>
-                  )}
-                  <span className='text-white'>{link.platform}</span>
-                </button>
-              </div>
-            );
-          } else {
-            return (
-              <div key={index} className='mb-4 flex flex-col items-center justify-center w-full mx-auto'>
-                <div className='skeleton-text bg-[#efefef] rounded-lg w-20 py-3'></div>
-              </div>
-            );
-          }
-        })}
+      <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+        {/* Profile Section */}
+        {loading ? (
+          <>
+            <div className="skeleton-img rounded-full mb-4 bg-[#efefef] w-20 h-20"></div>
+            <div className="skeleton-text rounded-xl mb-4 bg-[#efefef] w-20 py-2"></div>
+            <div className="skeleton-text2 rounded-xl mb-4 bg-[#efefef] w-20 py-1"></div>
+          </>
+        ) : (
+          profile && (
+            <>
+              <img
+                src={profile.avatar || '/default-avatar.png'}
+                alt="Profile Avatar"
+                className="rounded-full mb-4 w-20 h-20"
+              />
+              <h2 className="text-lg font-semibold">{profile.name}</h2>
+              <p className="text-sm text-gray-500">{profile.bio}</p>
+            </>
+          )
+        )}
+
+        {/* Links Section */}
+        {links.length > 0 ? (
+          links.map((link) => (
+            <div
+              key={link.id}
+              className={`mb-4 flex items-center justify-center w-full mx-auto p-4 rounded-lg ${platformColors[link.platform]}`}
+            >
+              <button
+                className="flex items-center justify-center text-white font-semibold w-full"
+                onClick={() => handleRemoveLink(link.id)}
+              >
+                {platformIcons[link.platform] && (
+                  <span className="mr-2">{platformIcons[link.platform]}</span>
+                )}
+                <span>{link.platform}</span>
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="text-center text-gray-500">
+            <p>No links added yet. Use the "Add Link" button to get started.</p>
+          </div>
+        )}
       </div>
     </div>
   );
