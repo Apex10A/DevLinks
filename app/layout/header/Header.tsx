@@ -8,8 +8,8 @@ import Link from 'next/link'
 
 const Header = () => {
   return (
-    <div className='bg-[#FAFAFA] md:px-[40px] md:py-[30px] '>
-        <div className='bg-[#fff] flex items-center justify-between md:px-10 py-[20px] px-[24px]'>
+    <div className='bg-[#FAFAFA] md:px-[40px] md:py-[24px] flex items-center w-full h-[78px] '>
+        <div className='bg-[#fff] flex items-center justify-between md:px-10 py-[20px] px-[24px] h-[78px] w-full'>
         <div className='flex items-center gap-2 '>
             <div>
             <DevLinksLogo/>
@@ -18,7 +18,7 @@ const Header = () => {
             <DevLink/>
             </div>
         </div>
-        <div className='flex items-center gap-3'>
+        <div className='flex items-center  gap-3'>
         <div className=''>
             <div className='bg-[#EFEBFF] px-[27px] py-[10px] rounded-[8px] flex items-center gap-2 '>
             <LinkIcon/>

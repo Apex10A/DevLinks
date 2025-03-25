@@ -15,11 +15,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import LinkedInIcon from '@/app/assets/svgs/LinkedInIcon';
 
 interface Link {
-    id: number;
+    id: string; // Changed to string for Firebase keys
     platform: string;
     url: string;
     error?: string;
-    firebaseKey?: string; // Add this to track Firebase keys
 }
 
 const HomePage: React.FC = () => {
@@ -30,26 +29,28 @@ const HomePage: React.FC = () => {
 
     useEffect(() => {
         const db = getDatabase(app);
-        const linksRef = ref(db, 'links/items');
+        const linksRef = ref(db, 'links/');
 
-        onValue(linksRef, (snapshot) => {
+        // Single listener for links
+        const unsubscribe = onValue(linksRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const linkArray = Object.entries(data).map(([key, value]: [string, any], index) => ({
-                    ...value,
-                    id: index + 1,
-                    firebaseKey: key,
-                    url: value.link // map the 'link' field to 'url'
+                const linkArray = Object.entries(data).map(([key, value]: [string, any]) => ({
+                    id: key,
+                    platform: value.platform,
+                    url: value.url || value.link // Handle both url and link fields
                 }));
                 setLinks(linkArray);
                 setSelectedPlatforms(new Set(linkArray.map(link => link.platform)));
-                setShowAddLinkForm(linkArray.length > 0);
+                setShowAddLinkForm(true);
             } else {
                 setLinks([]);
                 setSelectedPlatforms(new Set());
                 setShowAddLinkForm(false);
             }
         });
+
+        return () => unsubscribe(); // Cleanup listener
     }, []);
 
     const saveData = async () => {
@@ -60,26 +61,37 @@ const HomePage: React.FC = () => {
         const linksRef = ref(db, 'links/items');
 
         try {
+            // Validate all links before saving
+            const validationErrors = links.some(link => {
+                if (!link.platform || !link.url) {
+                    toast.error(`Link ${link.id} is missing platform or URL`);
+                    return true;
+                }
+                if (!validateUrl(link.platform, link.url)) {
+                    toast.error(`Invalid URL format for ${link.platform}`);
+                    return true;
+                }
+                return false;
+            });
+
+            if (validationErrors) {
+                setIsSaving(false);
+                return;
+            }
+
             // First, remove all existing links
             await remove(linksRef);
 
-            // Then add all current links
-            for (const link of links) {
-                if (!link.platform || !link.url) {
-                    throw new Error('All links must have both platform and URL');
-                }
-
-                if (!validateUrl(link.platform, link.url)) {
-                    throw new Error(`Invalid URL format for ${link.platform}`);
-                }
-
+            // Then add all current links as a batch
+            const savePromises = links.map(link => {
                 const newDoc = push(linksRef);
-                await set(newDoc, {
-                    link: link.url,
+                return set(newDoc, {
+                    url: link.url,
                     platform: link.platform,
                 });
-            }
+            });
 
+            await Promise.all(savePromises);
             toast.success("Links saved successfully");
         } catch (error: any) {
             toast.error(`Error: ${error.message}`);
@@ -89,57 +101,83 @@ const HomePage: React.FC = () => {
     };
 
     const handleAddLinkClick = () => {
-        setLinks([...links, { id: links.length + 1, platform: '', url: '' }]);
+        if (selectedPlatforms.size >= 6) {
+            toast.warning("Maximum of 6 links allowed");
+            return;
+        }
+        
+        // Generate a temporary ID for the new link
+        const tempId = `temp-${Date.now()}`;
+        
+        setLinks(prevLinks => [
+            ...prevLinks,
+            {
+                id: tempId,
+                platform: '',
+                url: '',
+            }
+        ]);
         setShowAddLinkForm(true);
     };
 
-    const handleRemoveLink = (id: number) => {
-        setLinks(links.filter(link => link.id !== id));
+    const handleRemoveLink = (id: string) => {
+        const updatedLinks = links.filter(link => link.id !== id);
+        setLinks(updatedLinks);
+        
+        // Update selected platforms
         const removedLink = links.find(link => link.id === id);
         if (removedLink) {
-            setSelectedPlatforms(prevPlatforms => {
-                const updatedPlatforms = new Set(prevPlatforms);
-                updatedPlatforms.delete(removedLink.platform);
-                return updatedPlatforms;
+            setSelectedPlatforms(prev => {
+                const updated = new Set(prev);
+                updated.delete(removedLink.platform);
+                return updated;
             });
         }
     };
 
     const validateUrl = (platform: string, url: string): boolean => {
+        if (!url) return false;
+        
+        try {
+            new URL(url); // Basic URL validation
+        } catch {
+            return false;
+        }
+
         const platformPatterns: { [key: string]: RegExp } = {
-            github: /^https:\/\/github\.com\/.+$/,
-            linkedin: /^https:\/\/(www\.)?linkedin\.com\/.+$/,
-            youtube: /^https:\/\/(www\.)?youtube\.com\/.+$/,
-            devto: /^https:\/\/dev\.to\/.+$/,
-            codewars: /^https:\/\/www\.codewars\.com\/.+$/,
-            freecodecamp: /^https:\/\/www\.freecodecamp\.org\/.+$/,
+            github: /^(https?:\/\/)?(www\.)?github\.com\/.+/i,
+            linkedin: /^(https?:\/\/)?(www\.)?linkedin\.com\/.+/i,
+            youtube: /^(https?:\/\/)?(www\.)?youtube\.com\/.+/i,
+            devto: /^(https?:\/\/)?dev\.to\/.+/i,
+            codewars: /^(https?:\/\/)?(www\.)?codewars\.com\/.+/i,
+            freecodecamp: /^(https?:\/\/)?(www\.)?freecodecamp\.org\/.+/i,
         };
-        return platformPatterns[platform]?.test(url) ?? false;
+        
+        return platformPatterns[platform]?.test(url) ?? true;
     };
 
-    const handleChange = (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setLinks(links.map(link => {
+        
+        setLinks(prevLinks => prevLinks.map(link => {
             if (link.id === id) {
                 let error = '';
+                
                 if (name === 'platform') {
-                    setSelectedPlatforms(prevPlatforms => {
-                        const updatedPlatforms = new Set(prevPlatforms);
-                        if (updatedPlatforms.has(value)) {
-                            error = "This platform has already been added.";
-                            return prevPlatforms;
-                        }
-                        updatedPlatforms.add(value);
-                        updatedPlatforms.delete(link.platform);
-                        return updatedPlatforms;
-                    });
+                    if (selectedPlatforms.has(value) && link.platform !== value) {
+                        error = "This platform has already been added.";
+                    } else {
+                        setSelectedPlatforms(prev => {
+                            const updated = new Set(prev);
+                            updated.delete(link.platform);
+                            updated.add(value);
+                            return updated;
+                        });
+                    }
                 }
 
-                if (name === 'url') {
-                    const isValid = validateUrl(link.platform, value);
-                    if (!isValid) {
-                        error = `Invalid URL for ${link.platform}`;
-                    }
+                if (name === 'url' && link.platform && !validateUrl(link.platform, value)) {
+                    error = `Invalid URL format for ${link.platform}`;
                 }
 
                 return { ...link, [name]: value, error };
@@ -148,12 +186,14 @@ const HomePage: React.FC = () => {
         }));
     };
 
+    // Rest of your JSX remains the same...
+
     return (
         <div className='bg-[#FAFAFA]'>
-            <div className='flex gap-10 md:px-10 md:py-10 px-4 py-4'>
+            <div className='flex gap-10 md:px-10 md:py-10 px-4 py-4 min-h-[700px]'>
                 <AnimatePresence>
                     <motion.div
-                        className='bg-[#fff] md:w-6/12 hidden lg:flex justify-center py-10 mx-auto'
+                        className='bg-[#fff] md:w-[560px] h-[834px] hidden lg:flex justify-center py-10 mx-auto'
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -162,7 +202,7 @@ const HomePage: React.FC = () => {
                         <MobilePreview  />
                     </motion.div>
                 </AnimatePresence>
-                <div className='bg-[#fff]'>
+                <div className='bg-[#fff] w-full py-[24px]'>
                     <div className='px-[40px] md:py-[20px] py-[20px]'>
                         <div className='max-w-xl'>
                             <h1 className='md:text-[32px] text-[24px] font-[700] text-[#333]'>
@@ -199,7 +239,7 @@ const HomePage: React.FC = () => {
                             links.map(link => (
                                 <motion.div
                                     key={link.id}
-                                    className='flex flex-col max-w-xl w-full'
+                                    className='flex flex-col  w-full'
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
