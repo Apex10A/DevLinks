@@ -10,21 +10,24 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../firebase/auth';
 import Link from 'next/link';
 import { toast } from 'react-toastify'; 
+import Image from 'next/image';
+import { Loader2 } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { authUser, isLoading } = useAuth();
+  const { authUser, isLoading: authIsLoading } = useAuth();
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && authUser) {
+    if (!authIsLoading && authUser) {
       router.push('/auth/homepage');
     }
-  }, [authUser, isLoading, router]);
+  }, [authUser, authIsLoading, router]);
 
   const loginHandler = async (event: { preventDefault: () => void; }) => {
     event.preventDefault();
@@ -36,6 +39,8 @@ const Login = () => {
       if (!password) setPasswordError('Cant be empty');
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -49,14 +54,23 @@ const Login = () => {
       } else {
         toast.error(error.message);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className='md:min-h-screen md:bg-[#FAFAFA] bg-[#fff] flex flex-col md:items-center justify-center'>
-      <div className='flex items-center gap-2 pl-[32px] md:pl-0'>
+      <div className='flex items-center gap-2 pl-[32px] md:pl-0 md:pt-[40px]'>
         <DevLinksLogo />
-        <DevLinks />
+        <div className='w-[135px] h-[26px] relative '>
+          <Image 
+            src='/DevLinks.svg' 
+            alt='' 
+            fill 
+            className='object-contain'
+          />
+        </div>
       </div>
       <div className='bg-[#ffffff] md:w-[50%] lg:w-[40%] md:p-[40px] p-[32px]'>
         <div>
@@ -78,7 +92,7 @@ const Login = () => {
               placeholder='e.g. alex@email.com' 
               id="Email" 
             />
-            {emailError && <span className='absolute right-[37px] text-red-500 text-sm'>{emailError}</span>}
+            {emailError && <span className=' text-red-500 text-xs'>{emailError}</span>}
           </div>
           
           <div className='pb-1'>
@@ -95,11 +109,35 @@ const Login = () => {
               className='py-[12px] rounded-[8px] px-[16px] w-full border-none outline-none' 
               id="password" 
             />
-            {emailError && <span className='absolute right-[37px] text-red-500 text-sm'>{passwordError}</span>}
+            {passwordError && <span className='w-xl text-red-500 text-xs'>{passwordError}</span>}
           </div>
-          {/* {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>} */}
+          
           <div className='mt-6 md:mt-4 mb-7 md:mb-5'>
-            <button type="submit" className='bg-[#633CFF] rounded-[8px] text-[#fff] w-full py-3 font-[600]'>Login</button>
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className={`
+                bg-[#633CFF] 
+                rounded-[8px] 
+                text-[#fff] 
+                w-full 
+                py-3 
+                font-[600] 
+                flex 
+                items-center 
+                justify-center 
+                ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                'Login'
+              )}
+            </button>
           </div>
         </form>
         <div className='text-center max-w-[50%] mx-auto md:max-w-[100%]'>
