@@ -6,7 +6,7 @@ import MobilePrevieww from "../../assets/svgs/MobilePrevieww";
 import LinkedInIcon from "@/app/assets/svgs/LinkedInIcon";
 import YoutubeIcon from "@/app/assets/svgs/YoutubeIcon";
 import DevToIcon from "@/app/assets/svgs/DevToIcon";
-import CodewarsIcon from "@/app/assets/svgs/CodewarsIcon";
+import CodewarsIcon from "@/app/assets/svgs/CodeWarsIcon";
 import FreeCodeCampIcon from "@/app/assets/svgs/FreeCodeCampIcon";
 
 const platformIcons = {
