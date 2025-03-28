@@ -128,11 +128,11 @@ const MobilePreview = () => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={`flex items-center justify-between p-4 rounded-lg ${
-                                    platformColors[link.platform] || 'bg-gray-200'
+                                    platformColors[link.platform as keyof typeof platformColors] || 'bg-gray-200'
                                 } text-white`}
                             >
                                 <div className="flex items-center">
-                                    {platformIcons[link.platform] || <div className="w-5 h-5 mr-2"></div>}
+                                    {platformIcons[link.platform as keyof typeof platformIcons] || <div className="w-5 h-5 mr-2"></div>}
                                     <span className="ml-2 capitalize">{link.platform}</span>
                                 </div>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -149,7 +149,7 @@ const MobilePreview = () => {
                                     className="flex items-center justify-between p-4 rounded-lg bg-gray-200 text-gray-500"
                                 >
                                     <div className="flex items-center">
-                                        {platformIcons[platform.platform] || <div className="w-5 h-5 mr-2"></div>}
+                                        {platformIcons[platform.platform as keyof typeof platformIcons] || <div className="w-5 h-5 mr-2"></div>}
                                         <span className="ml-2">{platform.label}</span>
                                     </div>
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
